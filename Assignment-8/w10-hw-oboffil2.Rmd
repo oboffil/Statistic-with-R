@@ -1,0 +1,386 @@
+---
+title: "Week 10 Homework"
+author: "Omar Boffil"
+date: "7/22/2020"
+output: html_document
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(scipen = 1, digits = 4, width = 80, fig.align = "center")
+```
+
+## Exercise 1 (Simulating Wald and Likelihood Ratio Tests)
+
+In this exercise we will investigate the distributions of hypothesis tests for logistic regression. For this exercise, we will use the following predictors.
+
+```{r}
+sample_size = 150
+set.seed(120)
+x1 = rnorm(n = sample_size)
+x2 = rnorm(n = sample_size)
+x3 = rnorm(n = sample_size)
+```
+
+Recall that
+
+$$
+p({\bf x}) = P[Y = 1 \mid {\bf X} = {\bf x}]
+$$
+
+Consider the true model
+
+$$
+\log\left(\frac{p({\bf x})}{1 - p({\bf x})}\right) = \beta_0 + \beta_1 x_1
+$$
+
+where
+
+- $\beta_0 = 0.4$
+- $\beta_1 = -0.35$
+
+**(a)** To investigate the distributions, simulate from this model 2500 times. To do so, calculate 
+
+
+$$
+P[Y = 1 \mid {\bf X} = {\bf x}]
+$$ 
+
+for an observation, and then make a random draw from a Bernoulli distribution with that success probability. (Note that a Bernoulli distribution is a Binomial distribution with parameter $n = 1$. There is no direction function in `R` for a Bernoulli distribution.)
+
+Each time, fit the model:
+
+$$
+\log\left(\frac{p({\bf x})}{1 - p({\bf x})}\right) = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3
+$$
+
+Store the test statistics for two tests:
+
+- The Wald test for $H_0: \beta_2 = 0$, which we say follows a standard normal distribution for "large" samples
+- The likelihood ratio test for $H_0: \beta_2 = \beta_3 = 0$, which we say follows a $\chi^2$ distribution (with some degrees of freedom) for "large" samples
+
+
+```{r}
+beta_0 = 0.4
+beta_1 = -0.35
+y = rep(0, sample_size)
+test_data = data.frame(y, x1, x2, x3)
+wald_test = rep(0,2500)
+likelihood_test = rep(0,2500)
+
+for(i in 1:2500) {
+
+eta = beta_0 + beta_1 * x1
+p = 1 / (1 + exp(-eta))
+test_data$y = rbinom(n = sample_size, size = 1, prob = p)
+
+fit_glm = glm(y ~ x1, data = test_data, family = binomial)
+fit_glm2 = glm(y ~ x1 + x2 + x3, data = test_data, family = binomial)
+
+wald_test[i] = summary(fit_glm2)$coefficients["x2", "z value"]
+likelihood_test[i] = -2 * as.numeric(logLik(fit_glm) - logLik(fit_glm2))
+}
+
+```
+
+**(b)** Plot a histogram of the empirical values for the Wald test statistic. Overlay the density of the true distribution assuming a large sample.
+
+```{r}
+hist(wald_test, freq = FALSE,
+     xlab = "Z-values",
+     main = "Wald Test Statistic",
+     breaks = 20,
+     border = "dodgerblue")
+x = seq(-1, 1, length = 150)
+curve(dnorm(x, mean = 0, sd = 1), col = "darkorange", add = TRUE, lwd = 3)
+```
+
+**(c)** Use the empirical results for the Wald test statistic to estimate the probability of observing a test statistic larger than 1. Also report this probability using the true distribution of the test statistic assuming a large sample.
+
+```{r}
+t_larger = wald_test > 1 
+
+true_dist = 1 - pnorm(1, mean = 0, sd = 1)
+```
+
+
+The empirical results for the Wald test statistic to estimate the probability of observing a test statistic larger than 1 is `r mean(t_larger)` and the probability using the true distribution is `r true_dist`
+
+
+**(d)** Plot a histogram of the empirical values for the likelihood ratio test statistic. Overlay the density of the true distribution assuming a large sample.
+
+```{r}
+hist(likelihood_test, freq = FALSE,
+     xlab = "Z-values",
+     main = "Likelihood Test Statistic",
+     breaks = 20,
+     border = "dodgerblue")
+curve(dchisq(x, df = 2), col = "darkorange", add = TRUE, lwd = 3)
+```
+
+
+
+**(e)** Use the empirical results for the likelihood ratio test statistic to estimate the probability of observing a test statistic larger than 5. Also report this probability using the true distribution of the test statistic assuming a large sample.
+
+```{r}
+t_larger = likelihood_test > 5 
+true_dist = 1 - pchisq(5, df = 2)
+```
+The probability of observing a test statistic larger than 5 for the likelihood ratio test statistic is `r mean(t_larger)`, and the probability using the true distribution of the test statistic is `r true_dist`
+
+**(f)** Repeat **(a)**-**(e)** but with simulation using a smaller sample size of 10. Based on these results, is this sample size large enough to use the standard normal and $\chi^2$ distributions in this situation? Explain.
+
+```{r message=FALSE, warning=FALSE}
+sample_size = 10
+set.seed(120)
+x1 = rnorm(n = sample_size)
+x2 = rnorm(n = sample_size)
+x3 = rnorm(n = sample_size)
+
+beta_0 = 0.4
+beta_1 = -0.35
+y = rep(0, sample_size)
+test_data = data.frame(y, x1, x2, x3)
+wald_test = rep(0,2500)
+likelihood_test = rep(0,2500)
+
+for(i in 1:2500) {
+
+eta = beta_0 + beta_1 * x1
+p = 1 / (1 + exp(-eta))
+test_data$y = rbinom(n = sample_size, size = 1, prob = p)
+
+fit_glm2 = glm(y ~ x1 + x2 + x3, data = test_data, family = binomial)
+fit_glm = glm(y ~ x1, data = test_data, family = binomial)
+
+
+wald_test[i] = summary(fit_glm2)$coefficients["x2", "z value"]
+likelihood_test[i] = -2 * as.numeric(logLik(fit_glm) - logLik(fit_glm2))
+
+}
+
+
+hist(wald_test, freq = FALSE,
+     xlab = "Z-values",
+     main = "Wald Test Statistic",
+     breaks = 20,
+     border = "dodgerblue")
+x = seq(-1, 1, length = 150)
+curve(dnorm(x, mean = 0, sd = 1), col = "darkorange", add = TRUE, lwd = 3)
+
+hist(likelihood_test, freq = FALSE,
+     xlab = "Z-values",
+     main = "Likelihood Test Statistic",
+     breaks = 20,
+     border = "dodgerblue")
+curve(dchisq(x, df = 2), col = "darkorange", add = TRUE, lwd = 3)
+
+
+mean(wald_test > 1)
+mean(likelihood_test > 5)
+
+```
+First, we get the warning from R for the fitted value of 0 and 1 which mean that we have to be careful with the model, then we can appreciate in the charts that 10 sample size is not enough for the standard normal, so we need a bigger sample size  
+
+
+## Exercise 2 (Surviving the Titanic)
+
+For this exercise use the `ptitanic` data from the `rpart.plot` package. (The `rpart.plot` package depends on the `rpart` package.) Use `?rpart.plot::ptitanic` to learn about this dataset. We will use logistic regression to help predict which passengers aboard the [Titanic](https://en.wikipedia.org/wiki/RMS_Titanic) will survive based on various attributes.
+
+```{r, message = FALSE, warning = FALSE}
+# install.packages("rpart")
+# install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+data("ptitanic")
+```
+
+For simplicity, we will remove any observations with missing data. Additionally, we will create a test and train dataset.
+
+```{r}
+ptitanic = na.omit(ptitanic)
+set.seed(420)
+trn_idx = sample(nrow(ptitanic), 300)
+ptitanic_trn = ptitanic[trn_idx, ]
+ptitanic_tst = ptitanic[-trn_idx, ]
+```
+
+**(a)** Consider the model
+
+$$
+\log\left(\frac{p({\bf x})}{1 - p({\bf x})}\right) = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_4 + \beta_5 x_3x_4
+$$
+
+where
+
+$$
+p({\bf x}) = P[Y = 1 \mid {\bf X} = {\bf x}]
+$$
+
+is the probability that a certain passenger survives given their attributes and
+
+- $x_1$ is a dummy variable that takes the value $1$ if a passenger was 2nd class.
+- $x_2$ is a dummy variable that takes the value $1$ if a passenger was 3rd class.
+- $x_3$ is a dummy variable that takes the value $1$ if a passenger was male.
+- $x_4$ is the age in years of a passenger.
+
+Fit this model to the training data and report its deviance.
+
+```{r}
+model = glm(survived ~ pclass + sex + age + sex:age, data = ptitanic_trn, family = binomial)
+deviance(model)
+```
+
+
+**(b)** Use the model fit in **(a)** and an appropriate statistical test to determine if class played a significant role in surviving on the Titanic. Use $\alpha = 0.01$. Report:
+
+
+```{r}
+model_2 = glm(survived ~ sex + age + sex:age, data = ptitanic_trn, family = binomial)
+anova(model_2, model, test = "LRT")
+
+```
+
+
+- The null hypothesis of the test is $\beta_1$ = $\beta_2 = 0$
+- The test statistic of the test is `r anova(model_2, model, test = "LRT")[2, "Deviance"]`
+- The p-value of the test is `r anova(model_2, model, test = "LRT")[2, "Pr(>Chi)"]`
+- A statistical decision we reject the hypothesis 
+- A practical conclusion because we reject the hypothesis we will prefer to work with the bigger model
+
+**(c)** Use the model fit in **(a)** and an appropriate statistical test to determine if an interaction between age and sex played a significant role in surviving on the Titanic. Use $\alpha = 0.01$. Report:
+
+```{r}
+model_3 = glm(survived ~ pclass + sex + age, data = ptitanic_trn, family = binomial)
+anova(model_3, model, test = "LRT")
+```
+
+
+- The null hypothesis of the test $\beta_5 = 0$
+- The test statistic of the test is `r anova(model_3, model, test = "LRT")[2, "Deviance"]`
+- The p-value of the test `r anova(model_3, model, test = "LRT")[2, "Pr(>Chi)"]`
+- A statistical decision we will fail to reject the hypothesis 
+- A practical conclusion because we fail to reject the hypothesis we will prefer the smaller model (model 3)
+
+**(d)** Use the model fit in **(a)** as a classifier that seeks to minimize the misclassification rate. Classify each of the passengers in the test dataset. Report the misclassification rate, the sensitivity, and the specificity of this classifier. (Use survived as the positive class.)
+
+
+```{r}
+tita_tst_pred = ifelse(predict(model, ptitanic_tst, type = "response") > 0.5, "survived",  "died")
+
+make_conf_mat = function(predicted, actual) {
+  table(predicted = predicted, actual = actual)
+}
+
+conf_mat_50 = make_conf_mat(predicted = tita_tst_pred, actual = ptitanic_tst$survived)
+
+get_sens = function(conf_mat) {
+  conf_mat[2, 2] / sum(conf_mat[, 2])
+}
+
+get_spec =  function(conf_mat) {
+  conf_mat[1, 1] / sum(conf_mat[, 1])
+}
+
+mean(tita_tst_pred != ptitanic_tst$survived)
+
+get_sens(conf_mat_50)
+
+get_spec(conf_mat_50)
+
+```
+**Misclassification rate:** `r mean(tita_tst_pred != ptitanic_tst$survived)` 
+
+**Sensitivity rate:** `r get_sens(conf_mat_50)`
+
+**Specificity rate:** `r get_spec(conf_mat_50)`
+
+## Exercise 3 (Breast Cancer Detection)
+
+For this exercise we will use data found in [`wisc-train.csv`](wisc-train.csv) and [`wisc-test.csv`](wisc-test.csv), which contain train and test data, respectively. `wisc.csv` is provided but not used. This is a modification of the Breast Cancer Wisconsin (Diagnostic) dataset from the UCI Machine Learning Repository. Only the first 10 feature variables have been provided. (And these are all you should use.)
+
+- [UCI Page](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic))
+- [Data Detail](https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.names)
+
+You should consider coercing the response to be a factor variable if it is not stored as one after importing the data.
+
+**(a)** The response variable `class` has two levels: `M` if a tumor is malignant, and `B` if a tumor is benign. Fit three models to the training data.
+
+- An additive model that uses `radius`, `smoothness`, and `texture` as predictors
+- An additive model that uses all available predictors
+- A model chosen via backwards selection using AIC. Use a model that considers all available predictors as well as their two-way interactions for the start of the search.
+
+For each, obtain a 5-fold cross-validated misclassification rate using the model as a classifier that seeks to minimize the misclassification rate. Based on this, which model is best? Relative to the best, are the other two underfitting or over fitting? Report the test misclassification rate for the model you picked as the best.
+
+
+```{r message=FALSE, warning=FALSE}
+library(readr)
+library(boot)
+wisc_test = read_csv("wisc-test.csv")
+wisc_train = read_csv("wisc-train.csv")
+
+wisc_train$class = as.factor(wisc_train$class)
+
+model_1 = glm(class ~ radius + smoothness + texture, data = wisc_train, family = binomial)
+model_2 = glm(class ~ ., data = wisc_train, family = binomial)
+model_x = glm(class ~ . ^ 2, data = wisc_train, family = binomial, maxit = 50)
+model_3 = step(model_x, direction = "backward", trace = 0)
+
+
+set.seed(1)
+fold1 = cv.glm(wisc_train, model_1, K = 5)$delta[1]
+set.seed(1)
+fold2 = cv.glm(wisc_train, model_2, K = 5)$delta[1]
+set.seed(1)
+fold3 = cv.glm(wisc_train, model_3, K = 5)$delta[1]
+
+cancer_tst_pred = mean(ifelse(predict(model_1, wisc_test, type = "response") > 0.5, "M",  "B") != wisc_test$class)
+
+```
+5-fold model 1 is: `r fold1`
+
+5-fold model 2 is: `r fold2`
+
+5-fold model 3 is: `r fold3`
+
+We selected model 1 with a misclassification rate of: `r cancer_tst_pred`
+
+
+**(b)** In this situation, simply minimizing misclassifications might be a bad goal since false positives and false negatives carry very different consequences. Consider the `M` class as the "positive" label. Consider each of the probabilities stored in `cutoffs` in the creation of a classifier using the **additive** model fit in **(a)**.
+
+```{r}
+cutoffs = seq(0.01, 0.99, by = 0.01)
+
+```
+
+That is, consider each of the values stored in `cutoffs` as $c$. Obtain the sensitivity and specificity in the test set for each of these classifiers. Using a single graphic, plot both sensitivity and specificity as a function of the cutoff used to create the classifier. Based on this plot, which cutoff would you use? (0 and 1 have not been considered for coding simplicity. If you like, you can instead consider these two values.)
+
+$$
+\hat{C}(\bf x) = 
+\begin{cases} 
+      1 & \hat{p}({\bf x}) > c \\
+      0 & \hat{p}({\bf x}) \leq c 
+\end{cases}
+$$
+```{r fig.height=5, fig.width=10}
+n = length(cutoffs)
+sen1 = rep(0, n)
+spe1 = rep(0, n)
+
+for (i in 1:n){
+  p = ifelse(predict(model_1, wisc_test, type = "response") > cutoffs[i], "M", "B")
+  conf_mat = make_conf_mat(predicted = p, actual = wisc_test$class)
+  sen1[i] = get_sens(conf_mat)
+  spe1[i] = get_spec(conf_mat)
+  
+}
+
+plot(sen1 ~ cutoffs,type = "l", lwd = 2,
+     xlab = "Cutoff",
+     main = "Cutoff", col = "blue")
+axis(1, seq(0, 1, 0.1))
+lines(cutoffs, spe1, col="red", lty = 2, lwd = 2)
+legend("bottom", c("Sens", "Spec"), lty = c(1, 2), lwd = 2,
+       col = c("blue", "red"))
+grid(nx = 20, ny = 20)
+```
+Base on this graph I will use the cutoff of 0.65

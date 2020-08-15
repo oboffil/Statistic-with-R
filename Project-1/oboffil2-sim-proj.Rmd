@@ -1,0 +1,941 @@
+---
+title: "Project 1"
+author: "Omar Boffil"
+date: "6/25/2020"
+output: html_document
+---
+
+# Simulation Study 1
+
+- **Introduction**
+
+In this study, we want to compare the **$F$ statistic**, **p-value**, and **$R^2$** empirical distribution between two models. The models are:
+
+1. A **Significant** model:
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$ and
+
+- $\beta_0 = 3$,
+- $\beta_1 = 1$,
+- $\beta_2 = 1$,
+- $\beta_3 = 1$.
+
+
+2. The **non-significant** model:
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$ and
+
+- $\beta_0 = 3$,
+- $\beta_1 = 0$,
+- $\beta_2 = 0$,
+- $\beta_3 = 0$.
+
+These models will ha a sample size of 25 and three levels of noise, which are $\sigma \in (1, 5, 10)$. For each model and σ combination, we will do 2000 simulations to fit the model and catch the values that we want for our distribution. 
+
+We have three levels of noise because we want to understand how each of the $F$ statistic, p-value, and $R^2$ are related to $σ$, and the relationships for the significant and non-significant model.
+
+
+- **Methods**
+
+In this section, we will add all code need it for the calculation. We will first start declaring the variables, data frames, and the library that we will need. Something to point out in the code is that all for loops does the same for each model and their correspondent sigma value (It will run 2000 time fit the model and save the values required), I did not created a function to summary it because to make it easier to understandable to the user 
+
+```{r , message=FALSE, warning = FALSE}
+birthday = 19900826
+set.seed(birthday)
+
+library(broom)
+library(readr)
+
+## Constant Variables and calculations for both simulations 
+
+study_1 = read_csv("study_1.csv", col_types = cols())
+n = 25
+x0 = rep(1,n)
+x1 = study_1$x1
+x2 = study_1$x2
+x3 = study_1$x3
+X = cbind(x0,x1,x2,x3)
+C = solve(t(X) %*% X)
+y = rep(0, n)
+simulations = 2000
+sigma_1 = 1
+sigma_2 = 5
+sigma_3 = 10
+
+## Significant model with sigma = 1
+
+beta_0 = 3
+beta_1 = 1
+beta_2 = 1
+beta_3 = 1
+
+
+df_1 = data.frame(y, x1, x2, x3)
+
+f_stat = c(rep(0, 2000))
+p_value = c(rep(0, 2000))
+r_2 = c(rep(0, 2000))
+
+## For loop that will cach the values 2000 times 
+
+for(i in 1:2000) {
+  
+  e = rnorm(n, mean = 0, sd = sigma_1)
+  df_1$y = beta_0 * x0 + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + e
+  model_fit = lm(y ~ x1 + x2 + x3, data = df_1)
+  f_stat[i] = glance(model_fit)$statistic
+  p_value[i] = glance(model_fit)$p.value
+  r_2[i] = glance(model_fit)$r.squared
+  
+}
+
+## Significant model with sigma = 5
+
+
+f_stat_2 = c(rep(0, 2000))
+p_value_2 = c(rep(0, 2000))
+r_2_2 = c(rep(0, 2000))
+df_2 = data.frame(y, x1, x2, x3)
+
+for(i in 1:2000) {
+  
+  e = rnorm(n, mean = 0, sd = sigma_2)
+  df_2$y = beta_0 * x0 + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + e
+  model_fit = lm(y ~ x1 + x2 + x3, data = df_2)
+  f_stat_2[i] = glance(model_fit)$statistic
+  p_value_2[i] = glance(model_fit)$p.value
+  r_2_2[i] = glance(model_fit)$r.squared
+}
+
+## Significant model with sigma = 10
+
+f_stat_3 = c(rep(0, 2000))
+p_value_3 = c(rep(0, 2000))
+r_2_3 = c(rep(0, 2000))
+df_3 = data.frame(y, x1, x2, x3)
+
+for(i in 1:2000) {
+  
+  e = rnorm(n, mean = 0, sd = sigma_3)
+  df_3$y = beta_0 * x0 + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + e
+  model_fit = lm(y ~ x1 + x2 + x3, data = df_3)
+  f_stat_3[i] = glance(model_fit)$statistic
+  p_value_3[i] = glance(model_fit)$p.value
+  r_2_3[i] = glance(model_fit)$r.squared
+  
+}
+
+
+## Non-Significant model with sigma = 1
+
+Beta_0 = 3
+Beta_1 = 0
+Beta_2 = 0
+Beta_3 = 0
+
+df_n1 = data.frame(y, x1, x2, x3)
+f_stat_n = c(rep(0, 2000))
+p_value_n = c(rep(0, 2000))
+r_2_n = c(rep(0, 2000))
+
+
+for(i in 1:2000) {
+  
+  e = rnorm(n, mean = 0, sd = sigma_1)
+  df_n1$y = Beta_0 * x0 + Beta_1 * x1 + Beta_2 * x2 + Beta_3 * x3 + e
+  model_fit = lm(y ~ x1 + x2 + x3, data = df_n1)
+  f_stat_n[i] = glance(model_fit)$statistic
+  p_value_n[i] = glance(model_fit)$p.value
+  r_2_n[i] = glance(model_fit)$r.squared
+  
+}
+
+## Non-Significant model with sigma = 5
+
+df_n2 = data.frame(y, x1, x2, x3)
+f_stat_n2 = c(rep(0, 2000))
+p_value_n2 = c(rep(0, 2000))
+r_2_n2 = c(rep(0, 2000))
+
+for(i in 1:2000) {
+  
+  e = rnorm(n, mean = 0, sd = sigma_2)
+  df_n2$y = Beta_0 * x0 + Beta_1 * x1 + Beta_2 * x2 + Beta_3 * x3 + e
+  model_fit = lm(y ~ x1 + x2 + x3, data = df_n2)
+  f_stat_n2[i] = glance(model_fit)$statistic
+  p_value_n2[i] = glance(model_fit)$p.value
+  r_2_n2[i] = glance(model_fit)$r.squared
+  
+}
+
+## Non-Significant model with sigma = 10
+
+df_n3 = data.frame(y, x1, x2, x3)
+f_stat_n3 = c(rep(0, 2000))
+p_value_n3 = c(rep(0, 2000))
+r_2_n3 = c(rep(0, 2000))
+
+for(i in 1:2000) {
+  
+  e = rnorm(n, mean = 0, sd = sigma_3)
+  df_n3$y = Beta_0 * x0 + Beta_1 * x1 + Beta_2 * x2 + Beta_3 * x3 + e
+  model_fit = lm(y ~ x1 + x2 + x3, data = df_n3)
+  f_stat_n3[i] = glance(model_fit)$statistic
+  p_value_n3[i] = glance(model_fit)$p.value
+  r_2_n3[i] = glance(model_fit)$r.squared
+  
+}
+
+```
+
+- **Results:**
+
+We will Show the result in charts to a better understand of what is happening with the data for each different value, we first plot the significant model and the we plot the non-significant model 
+
+```{r}
+par(mfrow = c(3, 3))
+si = c(1,5,10)
+
+  hist(f_stat, prob = TRUE, breaks = 20, 
+     xlab = "F statistic", main = paste("Sigma = ",toString(si[1])), border = "dodgerblue")
+  
+  hist(p_value, prob = TRUE, breaks = 20, 
+     xlab = "P Value", main = paste("Sigma = ",toString(si[1])), border = "orange")
+  
+  hist(r_2, prob = TRUE, breaks = 20, 
+     xlab = "R^2", main = paste("Sigma = ",toString(si[1])), border = "green")
+  
+  
+  hist(f_stat_2, prob = TRUE, breaks = 20, 
+     xlab = "F statistic", main = paste("Sigma = ",toString(si[2])), border = "dodgerblue")
+  
+  hist(p_value_2, prob = TRUE, breaks = 20, 
+     xlab = "P Value", main = paste("Sigma = ",toString(si[2])), border = "orange")
+  
+  hist(r_2_2, prob = TRUE, breaks = 20, 
+     xlab = "R^2", main = paste("Sigma = ",toString(si[2])), border = "green")
+  
+    hist(f_stat_3, prob = TRUE, breaks = 20, 
+     xlab = "F statistic", main = paste("Sigma = ",toString(si[3])), border = "dodgerblue")
+  
+  hist(p_value_3, prob = TRUE, breaks = 20, 
+     xlab = "P Value", main = paste("Sigma = ",toString(si[3])), border = "orange")
+  
+  hist(r_2_3, prob = TRUE, breaks = 20, 
+     xlab = "R^2", main = paste("Sigma = ",toString(si[3])), border = "green")
+
+```
+**Significant model** 
+
+```{r}
+par(mfrow = c(3, 3))
+
+  hist(f_stat_n, prob = TRUE, breaks = 10, 
+     xlab = "F statistic", main = paste("Sigma = ",toString(si[1])), border = "dodgerblue")
+  
+  hist(p_value_n, prob = TRUE, breaks = 20, 
+     xlab = "P Value", main = paste("Sigma = ",toString(si[1])), border = "orange")
+  
+  hist(r_2_n, prob = TRUE, breaks = 20, 
+     xlab = "R^2", main = paste("Sigma = ",toString(si[1])), border = "green")
+  
+  
+  hist(f_stat_n2, prob = TRUE, breaks = 20, 
+     xlab = "F statistic", main = paste("Sigma = ",toString(si[2])), border = "dodgerblue")
+  
+  hist(p_value_n2, prob = TRUE, breaks = 20, 
+     xlab = "P Value", main = paste("Sigma = ",toString(si[2])), border = "orange")
+  
+  hist(r_2_n2, prob = TRUE, breaks = 20, 
+     xlab = "R^2", main = paste("Sigma = ",toString(si[2])), border = "green")
+  
+    hist(f_stat_n3, prob = TRUE, breaks = 20, 
+     xlab = "F statistic", main = paste("Sigma = ",toString(si[3])), border = "dodgerblue")
+  
+  hist(p_value_n3, prob = TRUE, breaks = 20, 
+     xlab = "P Value", main = paste("Sigma = ",toString(si[3])), border = "orange")
+  
+  hist(r_2_n3, prob = TRUE, breaks = 20, 
+     xlab = "R^2", main = paste("Sigma = ",toString(si[3])), border = "green")
+
+```
+**Non-Significant model** 
+
+
+**Discussion:**
+
+We start our study with the main question of study how $F$ statistic, p-value, and $R^2$ are related to $σ$ value for both models, and with the result we got, we can have some explanation to know what is happening. Both models have some similitude in some of the values for a specific value of sigma. Still, they can say that the significant model and the non-significant model the $F$ statistic have a clear Skewed Right (positively skewed) where the majority of the values close to zero and for both the change of the sigma move the values closer to zero.
+
+The P-Value for both models is different, and the effect that has the sigma value on them is notorious for the significant sigma value we can see than the more prominent the sigma more the values get far from zero. Also, we see the big difference between the sigma one and sigma ten. We can say that we have a Skewed right shape for all levels of sigma for the significant model. On the other side, we have a non-significant model that has different results. We found a uniform shape, this provides little information about our model but could be because the number of classes is too small or the distribution that has several peaks. But if we compare both models, we can conclude that for the different values of sigma, the significant model shows more clear results than the non-significant model. 
+
+Finally, the $R^2$ values fallow a Skewed right shape except for the value of sigma equal 1, this happens because the smallest the sigma more close get the values to 1, also, if we compare both the significant, and the non-significant we can appreciate that the change of the sigma has more impact in the significant value.
+
+- **Simulation Study 2**
+
+- **Introduction:**
+
+In this simulation study, we will calculate Train and Test RMSE to see what is the best model and to investigate on how good this process works. Some of the question that we will try to answer are does the method always select the correct model? On average, does is select the correct model?and how does the level of noise affect the results. For this we will use nine models for train and test dataset and we will calculate the RMSE for each value of sigma. at the end we expect to to select the correct model after 1000 simulation for each model and each value of sigma. 
+
+for the simulation we will use the model below:
+
+\[
+Y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \beta_3 x_{i3} + \beta_4 x_{i4} + \beta_5 x_{i5} + \beta_6 x_{i6} + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$ and
+
+- $\beta_0 = 0$,
+- $\beta_1 = 3$,
+- $\beta_2 = -4$,
+- $\beta_3 = 1.6$,
+- $\beta_4 = -1.1$,
+- $\beta_5 = 0.7$,
+- $\beta_6 = 0.5$.
+
+We will consider a sample size of $500$ and three possible levels of noise. That is, three values of $\sigma$.
+
+- $n = 500$
+- $\sigma \in (1, 2, 4)$
+
+We will use the data study_2.csv for the values of the predictors. 
+
+For each, fit **nine** models, with forms:
+
+- `y ~ x1`
+- `y ~ x1 + x2`
+- `y ~ x1 + x2 + x3`
+- `y ~ x1 + x2 + x3 + x4`
+- `y ~ x1 + x2 + x3 + x4 + x5`
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6`, the correct form of the model as noted above
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7`
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8`
+- `y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9`
+
+and for each model we will calculate RMSE for the train and test .
+
+\[
+\text{RMSE}(\text{model, data}) = \sqrt{\frac{1}{n} \sum_{i = 1}^{n}(y_i - \hat{y}_i)^2}
+\]
+
+- **Methods**
+
+We will start declaring the variables and libraries that we need for this model. Also, you might note that some of the code is repeated with different values, we did not create a function to make it easier to understand to the viewer.  
+
+```{r message=FALSE, warning = FALSE}
+birthday = 19900826
+set.seed(birthday)
+
+# Declaring constants  
+
+library(readr)
+study_2 = read_csv("study_2.csv", col_types = cols())
+beta_0 = 0
+beta_1 = 3
+beta_2 = -4
+beta_3 = 1.6
+beta_4 = -1.1
+beta_5 = 0.7
+beta_6 = 0.5
+n = 500
+sigma_1 = 1
+sigma_2 = 2
+sigma_3 = 4
+simulations = 1000
+p = 7
+
+x0 = rep(0,n)
+x1 = study_2$x1
+x2 = study_2$x2
+x3 = study_2$x3
+x4 = study_2$x4
+x5 = study_2$x5
+x6 = study_2$x6
+x7 = study_2$x7
+x8 = study_2$x8
+x9 = study_2$x9
+
+model_train_1 = rep(0,1000)
+model_train_2 = rep(0,1000)
+model_train_3 = rep(0,1000)
+model_train_4 = rep(0,1000)
+model_train_5 = rep(0,1000)
+model_train_6 = rep(0,1000)
+model_train_7 = rep(0,1000)
+model_train_8 = rep(0,1000)
+model_train_9 = rep(0,1000)
+
+model_test_1 = rep(0,1000)
+model_test_2 = rep(0,1000)
+model_test_3 = rep(0,1000)
+model_test_4 = rep(0,1000)
+model_test_5 = rep(0,1000)
+model_test_6 = rep(0,1000)
+model_test_7 = rep(0,1000)
+model_test_8 = rep(0,1000)
+model_test_9 = rep(0,1000)
+
+
+#Function to calculate RMSE
+
+rmse  = function(original, predicted_value) {
+  sqrt(mean((original - predicted_value) ^ 2))
+}
+
+
+#Models when sigma is 1
+
+
+#For loop of 1000 times for sigma value of 1
+for(i in 1:1000){
+  
+  e = rnorm(n, mean = 0, sd = sigma_1)
+  study_2$y = beta_0 * x0  + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + beta_4 * x4 + beta_5 * x5 + beta_6 * x6 + e
+  
+  #random select 250 observations for training, and 250 observations for testing
+  index_random = sample(1:nrow(study_2),250)
+  train_data = study_2[index_random,]
+  test_data = study_2[-index_random,]
+  
+  #Fit the model for each model 
+  
+  model_1 = lm(y ~ x1, data = train_data)
+  model_2 = lm(y ~ x1 + x2, data = train_data)
+  model_3 = lm(y ~ x1 + x2 + x3, data = train_data)
+  model_4 = lm(y ~ x1 + x2 + x3 + x4, data = train_data)
+  model_5 = lm(y ~ x1 + x2 + x3 + x4 + x5, data = train_data)
+  model_6 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6, data = train_data) # The correct model
+  model_7 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7, data = train_data)
+  model_8 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, data = train_data)
+  model_9 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, data = train_data)
+  
+  model_train_1[i] = rmse(train_data$y, predict(model_1, train_data))
+  model_train_2[i] = rmse(train_data$y, predict(model_2, train_data))
+  model_train_3[i] = rmse(train_data$y, predict(model_3, train_data))
+  model_train_4[i] = rmse(train_data$y, predict(model_4, train_data))
+  model_train_5[i] = rmse(train_data$y, predict(model_5, train_data))
+  model_train_6[i] = rmse(train_data$y, predict(model_6, train_data))
+  model_train_7[i] = rmse(train_data$y, predict(model_7, train_data))
+  model_train_8[i] = rmse(train_data$y, predict(model_8, train_data))
+  model_train_9[i] = rmse(train_data$y, predict(model_9, train_data))
+  
+  model_test_1[i] = rmse(test_data$y, predict(model_1, test_data))
+  model_test_2[i] = rmse(test_data$y, predict(model_2, test_data))
+  model_test_3[i] = rmse(test_data$y, predict(model_3, test_data))
+  model_test_4[i] = rmse(test_data$y, predict(model_4, test_data))
+  model_test_5[i] = rmse(test_data$y, predict(model_5, test_data))
+  model_test_6[i] = rmse(test_data$y, predict(model_6, test_data))
+  model_test_7[i] = rmse(test_data$y, predict(model_7, test_data))
+  model_test_8[i] = rmse(test_data$y, predict(model_8, test_data))
+  model_test_9[i] = rmse(test_data$y, predict(model_9, test_data))
+}
+
+#create a Data frame with the results of train and test for sigma 1
+rmse_train_1 = data.frame(model_train_1,model_train_2,model_train_3,model_train_4,model_train_5,model_train_6,model_train_7,model_train_8,model_train_9)
+rmse_test_1 = data.frame(model_test_1,model_test_2,model_test_3,model_test_4,model_test_5,model_test_6,model_test_7,model_test_8,model_test_9)
+
+
+#Repite the same but with sigma is 2
+
+#For loop of 1000 times for sigma value of 1
+for(i in 1:1000){
+  
+  e = rnorm(n, mean = 0, sd = sigma_2)
+  study_2$y = beta_0 * x0  + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + beta_4 * x4 + beta_5 * x5 + beta_6 * x6 + e
+  
+  #random select 250 observations for training, and 250 observations for testing
+  index_random = sample(1:nrow(study_2),250)
+  train_data = study_2[index_random,]
+  test_data = study_2[-index_random,]
+  
+  #Fit the model for each model 
+  
+  model_1 = lm(y ~ x1, data = train_data)
+  model_2 = lm(y ~ x1 + x2, data = train_data)
+  model_3 = lm(y ~ x1 + x2 + x3, data = train_data)
+  model_4 = lm(y ~ x1 + x2 + x3 + x4, data = train_data)
+  model_5 = lm(y ~ x1 + x2 + x3 + x4 + x5, data = train_data)
+  model_6 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6, data = train_data) # The correct model
+  model_7 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7, data = train_data)
+  model_8 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, data = train_data)
+  model_9 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, data = train_data)
+  
+  model_train_1[i] = rmse(train_data$y, predict(model_1, train_data))
+  model_train_2[i] = rmse(train_data$y, predict(model_2, train_data))
+  model_train_3[i] = rmse(train_data$y, predict(model_3, train_data))
+  model_train_4[i] = rmse(train_data$y, predict(model_4, train_data))
+  model_train_5[i] = rmse(train_data$y, predict(model_5, train_data))
+  model_train_6[i] = rmse(train_data$y, predict(model_6, train_data))
+  model_train_7[i] = rmse(train_data$y, predict(model_7, train_data))
+  model_train_8[i] = rmse(train_data$y, predict(model_8, train_data))
+  model_train_9[i] = rmse(train_data$y, predict(model_9, train_data))
+  
+  model_test_1[i] = rmse(test_data$y, predict(model_1, test_data))
+  model_test_2[i] = rmse(test_data$y, predict(model_2, test_data))
+  model_test_3[i] = rmse(test_data$y, predict(model_3, test_data))
+  model_test_4[i] = rmse(test_data$y, predict(model_4, test_data))
+  model_test_5[i] = rmse(test_data$y, predict(model_5, test_data))
+  model_test_6[i] = rmse(test_data$y, predict(model_6, test_data))
+  model_test_7[i] = rmse(test_data$y, predict(model_7, test_data))
+  model_test_8[i] = rmse(test_data$y, predict(model_8, test_data))
+  model_test_9[i] = rmse(test_data$y, predict(model_9, test_data))
+}
+#create a Data frame with the results of train and test for sigma 2
+rmse_train_2 = data.frame(model_train_1,model_train_2,model_train_3,model_train_4,model_train_5,model_train_6,model_train_7,model_train_8,model_train_9)
+rmse_test_2 = data.frame(model_test_1,model_test_2,model_test_3,model_test_4,model_test_5,model_test_6,model_test_7,model_test_8,model_test_9)
+
+
+#Repite the same but with sigma is 4
+
+#For loop of 1000 times for sigma value of 4
+for(i in 1:1000){
+  
+  e = rnorm(n, mean = 0, sd = sigma_2)
+  study_2$y = beta_0 * x0  + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + beta_4 * x4 + beta_5 * x5 + beta_6 * x6 + e
+  
+  #random select 250 observations for training, and 250 observations for testing
+  index_random = sample(1:nrow(study_2),250)
+  train_data = study_2[index_random,]
+  test_data = study_2[-index_random,]
+  
+  # Fit the model for each model 
+  
+  model_1 = lm(y ~ x1, data = train_data)
+  model_2 = lm(y ~ x1 + x2, data = train_data)
+  model_3 = lm(y ~ x1 + x2 + x3, data = train_data)
+  model_4 = lm(y ~ x1 + x2 + x3 + x4, data = train_data)
+  model_5 = lm(y ~ x1 + x2 + x3 + x4 + x5, data = train_data)
+  model_6 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6, data = train_data) # The correct model
+  model_7 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7, data = train_data)
+  model_8 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, data = train_data)
+  model_9 = lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, data = train_data)
+  
+  # RMSE for train model 
+  model_train_1[i] = rmse(train_data$y, predict(model_1, train_data))
+  model_train_2[i] = rmse(train_data$y, predict(model_2, train_data))
+  model_train_3[i] = rmse(train_data$y, predict(model_3, train_data))
+  model_train_4[i] = rmse(train_data$y, predict(model_4, train_data))
+  model_train_5[i] = rmse(train_data$y, predict(model_5, train_data))
+  model_train_6[i] = rmse(train_data$y, predict(model_6, train_data))
+  model_train_7[i] = rmse(train_data$y, predict(model_7, train_data))
+  model_train_8[i] = rmse(train_data$y, predict(model_8, train_data))
+  model_train_9[i] = rmse(train_data$y, predict(model_9, train_data))
+  
+  
+  # RMSE for test model 
+  model_test_1[i] = rmse(test_data$y, predict(model_1, test_data))
+  model_test_2[i] = rmse(test_data$y, predict(model_2, test_data))
+  model_test_3[i] = rmse(test_data$y, predict(model_3, test_data))
+  model_test_4[i] = rmse(test_data$y, predict(model_4, test_data))
+  model_test_5[i] = rmse(test_data$y, predict(model_5, test_data))
+  model_test_6[i] = rmse(test_data$y, predict(model_6, test_data))
+  model_test_7[i] = rmse(test_data$y, predict(model_7, test_data))
+  model_test_8[i] = rmse(test_data$y, predict(model_8, test_data))
+  model_test_9[i] = rmse(test_data$y, predict(model_9, test_data))
+}
+#create a Data frame with the results of train and test for sigma 4
+rmse_train_4 = data.frame(model_train_1,model_train_2,model_train_3,model_train_4,model_train_5,model_train_6,model_train_7,model_train_8,model_train_9)
+rmse_test_4 = data.frame(model_test_1,model_test_2,model_test_3,model_test_4,model_test_5,model_test_6,model_test_7,model_test_8,model_test_9)
+
+
+
+#Mean of each Model
+means_train = apply(rmse_train_1,2,mean)
+means_test = apply(rmse_test_1,2,mean)
+means_train_2 = apply(rmse_train_2,2,mean)
+means_test_2 = apply(rmse_test_2,2,mean)
+means_train_4 = apply(rmse_train_4,2,mean)
+means_test_4 = apply(rmse_test_4,2,mean)
+
+#Best RMSE for each sigma 
+min_vrg_model = as.data.frame(table(colnames(rmse_test_1)[apply(rmse_test_1,1,which.min)]))
+min_vrg_model_2 = as.data.frame(table(colnames(rmse_test_2)[apply(rmse_test_2,1,which.min)]))
+min_vrg_model_3 = as.data.frame(table(colnames(rmse_test_4)[apply(rmse_test_4,1,which.min)]))
+
+
+```
+
+
+- **Results:**
+
+This first set of plot are the average Train RMSE and average Test RMSE for each model and the different values of sigma 
+
+```{r}
+#Plot average Train RMSE
+par(mfrow = c(3,1))
+
+plot(means_train, main="Train model with Sigma = 1 ", xlab = "Models", ylab = "RMSE",xaxt="n", pch=19, ylim = c(0.8, 3), xlim = c(0.5,9), col = "#00AFBB")
+axis(1, at = seq(1, 9, by = 1), las=2)
+text(means_train, labels= round(means_train, 4), cex=0.9, font=1, pos = 3)
+
+
+plot(means_train_2, main="Train model with Sigma = 2 ", xlab = "Models", ylab = "RMSE",xaxt="n", pch=19, ylim = c(1.5, 4), xlim = c(0.5,9), col = "#00AFBB")
+axis(1, at = seq(1, 9, by = 1), las=2)
+text(means_train_2, labels= round(means_train_2, 4), cex=0.9, font=1, pos = 3)
+
+
+plot(means_train_4, main="Train model with Sigma = 4 ", xlab = "Models", ylab = "RMSE",xaxt="n", pch=19, ylim = c(1.5, 4), xlim = c(0.5,9), col = "#00AFBB")
+axis(1, at = seq(1, 9, by = 1), las=2)
+text(means_train_4, labels= round(means_train_4, 4), cex=0.9, font=1, pos = 3)
+
+
+```
+
+
+```{r}
+#Plot average Test RMSE 
+par(mfrow = c(3,1))
+
+plot(means_test, main="Test model with Sigma = 1 ", xlab = "Models", ylab = "RMSE",xaxt="n", pch=19, ylim = c(0.5, 3.5), xlim = c(0.5,9), col = "#E7B800" )
+axis(1, at = seq(1, 9, by = 1), las=2)
+text(means_test, labels= round(means_test, 4), cex=0.9, font=1, pos = 3)
+
+plot(means_test_2, main="Test model with Sigma = 2 ", xlab = "Models", ylab = "RMSE",xaxt="n", pch=19, ylim = c(2, 3.5), xlim = c(0.5,9), col = "#E7B800")
+axis(1, at = seq(1, 9, by = 1), las=2)
+text(means_test_2, labels= round(means_test_2, 4), cex=0.9, font=1, pos = 3)
+
+plot(means_test_4, main="Test model with Sigma = 4 ", xlab = "Models", ylab = "RMSE",xaxt="n", pch=19, ylim = c(2, 3.5), xlim = c(0.5,9), col = "#E7B800")
+axis(1, at = seq(1, 9, by = 1), las=2)
+text(means_test_4, labels= round(means_test_4, 4), cex=0.9, font=1, pos = 3)
+
+```
+
+
+
+Here we are plotting to see how often we choose the best model every time we ran it.
+
+```{r}
+# Model chosen for each value of sigma.
+par(mfrow = c(1,3))
+
+plot(Freq ~ Var1, data = min_vrg_model, main = "Model chosen for sigma = 1",cex.main=1,cex.axis=0.5, xlab="Model")
+text(Freq ~ Var1, data=min_vrg_model, labels = Freq, pos=3, cex=1, col="red")
+
+plot(Freq ~ Var1, data = min_vrg_model_2, main= "Model chosen for sigma = 2", cex.main= 1, cex.axis=0.6,
+     xlab="Model" ,xpd=TRUE)
+text(Freq ~ Var1, data = min_vrg_model_2, labels = Freq, pos=3, cex=1, col="red")
+
+plot(Freq ~ Var1, data = min_vrg_model_3, main = "Model chosen for sigma = 4", cex.main = 1, cex.axis = 0.6,
+     xlab="Model Size")
+text(Freq ~ Var1, data = min_vrg_model_3, labels = Freq, pos=3, cex=1, col="red")
+```
+
+- **Discussion:**
+
+First for the train and test model we see that the biggest the model and in average the values obtained by RMSE are smaller, also, one of the questions that we have was that in average do the system always select the right model and the answer for that is that on average the system selects the best model but no all the time. This information is found in the last three chats.
+
+One last thing that I want to point out is that for each value of sigma we see that the lowest train RMSE is from the highest model size, but this does not mean that full model is always the best model. 
+
+
+# Simulation Study 3: Power
+
+- **Introduction:**
+
+In this simulation study we will investigate the **power** of the significance of regression test for simple linear regression. 
+
+\[
+H_0: \beta_{1} = 0 \ \text{vs} \ H_1: \beta_{1} \neq 0
+\]
+
+We have to start understanding that **power** is the probability that a signal of a particular strength will be detected and that many things affect the power of a test, some of those are:
+
+- Sample Size, $n$
+- Signal Strength, $\beta_1$
+- Noise Level, $\sigma$
+- Significance Level, $\alpha$
+
+In this study we will investigate $n$, $\beta_1$, $\sigma$.
+
+To do so we will simulate from the model
+
+\[
+Y_i = \beta_0 + \beta_1 x_i + \epsilon_i
+\]
+
+where $\epsilon_i \sim N(0, \sigma^2)$.
+
+For simplicity, we will let $\beta_0 = 0$, thus $\beta_1$ is essentially controlling the amount of "signal." We will then consider different signals, noises, and sample sizes:
+
+- $\beta_1 \in (-2, -1.9, -1.8, \ldots, -0.1, 0, 0.1, 0.2, 0.3, \ldots 1.9, 2)$
+- $\sigma \in (1, 2, 4)$
+- $n \in (10, 20, 30)$
+
+We will hold the significance level constant at $\alpha = 0.05$.
+
+- **Methods**
+
+We will start declaring the variables and libraries that we need for this model. Also, you might note that some of the code is repeated with different values, we did not create a function to make it easier to understand to the viewer.
+
+
+```{r message=FALSE, warning = FALSE}
+birthday = 19900826
+set.seed(birthday)
+
+library(dplyr)
+
+sigma_1 = 1
+sigma_2 = 2
+sigma_3 = 4
+n_1 = 10
+n_2 = 20
+n_3 = 30
+
+beta_0 = 0
+beta = seq(-2,2,by=0.1)
+simulations = 1000
+p_value = rep(0,1000)
+p_value_2 = rep(0,1000)
+p_value_3 = rep(0,1000)
+
+x_values_1 = seq(0, 5, length = n_1)
+x_values_2 = seq(0, 5, length = n_2)
+x_values_3 = seq(0, 5, length = n_3)
+
+p_table_1 = list(beta,p_value)
+p_table_2 = list(beta,p_value_2)
+p_table_3 = list(beta,p_value_3)
+
+#This function will help us to merge the data frame later 
+merge.all = function(x, y) {
+  merge(x, y, all=TRUE, by=c("b","p_value"))
+}
+merge.all2 = function(x, y) {
+  merge(x, y, all=TRUE, by=c("b","p_value_2"))
+}
+merge.all3 = function(x, y) {
+  merge(x, y, all=TRUE, by=c("b","p_value_3"))
+}
+
+
+# Start with sigma = 1
+
+# first with N = 10
+for(i in seq_along(beta)){
+  for(t in 1:1000){
+    e = rnorm(n_1, mean=0, sd=sigma_1)
+    y = beta_0 + beta[i] * x_values_1 + e
+    model_1 = lm(y ~ x_values_1)
+    p_value[t] = summary(model_1)$coefficient[2,4]
+  }
+  p_table_1[[i]] = data.frame(b = beta[i], p_value = p_value)
+
+}
+
+# With N = 20
+for(i in seq_along(beta)){
+  for(t in 1:1000){
+    e = rnorm(n_1, mean=0, sd=sigma_1)
+    y = beta_0 + beta[i] * x_values_2 + e
+    model_1 = lm(y ~ x_values_2)
+    p_value_2[t] = summary(model_1)$coefficient[2,4]
+  }
+  p_table_2[[i]] = data.frame(b = beta[i], p_value_2 = p_value_2)
+}
+
+
+# With N = 30
+for(i in seq_along(beta)){
+  for(t in 1:1000){
+    e = rnorm(n_1, mean=0, sd=sigma_1)
+    y = beta_0 + beta[i] * x_values_3 + e
+    model_1 = lm(y ~ x_values_3)
+    p_value_3[t] = summary(model_1)$coefficient[2,4]
+  }
+  p_table_3[[i]] = data.frame(b = beta[i], p_value_3 = p_value_3)
+}
+
+#Marge the values and create a new columns with values that reject the Hypothesis 
+sigm1 = Reduce(merge.all, p_table_1)
+sigm1["alpha_1"] = ifelse(sigm1$p_value < 0.05, 0.001, 0)
+sigm1$p_value = NULL
+
+# Group the values to make the chart 
+get1 = sigm1 %>% group_by(b) %>%
+  summarise_at(vars(starts_with("alpha")), sum)
+
+sigm2 = Reduce(merge.all2, p_table_2)
+sigm2["alpha_2"] = ifelse(sigm2$p_value_2 < 0.05, 0.001, 0)
+sigm2$p_value_2 = NULL
+
+get2 = sigm2 %>% group_by(b) %>%
+  summarise_at(vars(starts_with("alpha")), sum)
+
+# Marge calculated values
+sigm3 = Reduce(merge.all3, p_table_3)
+sigm3["alpha_3"] = ifelse(sigm3$p_value_3 < 0.05, 0.001, 0)
+sigm3$p_value_3 = NULL
+
+get3 = sigm3 %>% group_by(b) %>%
+  summarise_at(vars(starts_with("alpha")), sum)
+
+
+# Same process but with Sigma = 2
+  # With N = 10
+  for(i in seq_along(beta)){
+    for(t in 1:1000){
+      e = rnorm(n_1, mean=0, sd=sigma_2)
+      y = beta_0 + beta[i] * x_values_1 + e
+      model_1 = lm(y ~ x_values_1)
+      p_value[t] = summary(model_1)$coefficient[2,4]
+    }
+    p_table_1[[i]] = data.frame(b = beta[i], p_value = p_value)
+    
+  }
+  
+  # With N = 20
+  for(i in seq_along(beta)){
+    for(t in 1:1000){
+      e = rnorm(n_1, mean=0, sd=sigma_2)
+      y = beta_0 + beta[i] * x_values_2 + e
+      model_1 = lm(y ~ x_values_2)
+      p_value_2[t] = summary(model_1)$coefficient[2,4]
+    }
+    p_table_2[[i]] = data.frame(b = beta[i], p_value_2 = p_value_2)
+  }
+  
+  # With N = 30
+  for(i in seq_along(beta)){
+    for(t in 1:1000){
+      e = rnorm(n_1, mean=0, sd=sigma_2)
+      y = beta_0 + beta[i] * x_values_3 + e
+      model_1 = lm(y ~ x_values_3)
+      p_value_3[t] = summary(model_1)$coefficient[2,4]
+    }
+    p_table_3[[i]] = data.frame(b = beta[i], p_value_3 = p_value_3)
+  }
+  
+  get_h = Reduce(merge.all, p_table_1)
+  get_h["alpha_1"] = ifelse(get_h$p_value < 0.05, 0.001, 0)
+  get_h$p_value = NULL
+  
+  sigma2 = get_h %>% group_by(b) %>%
+    summarise_at(vars(starts_with("alpha")), sum)
+  
+ 
+  get_h2 = Reduce(merge.all2, p_table_2)
+  get_h2["alpha_2"] = ifelse(get_h2$p_value_2 < 0.05, 0.001, 0)
+  get_h2$p_value_2 = NULL
+  
+  sigma2_2 = get_h2 %>% group_by(b) %>%
+    summarise_at(vars(starts_with("alpha")), sum)
+  
+
+  # Marge calculated values
+  get_h3 = Reduce(merge.all3, p_table_3)
+  get_h3["alpha_3"] = ifelse(get_h3$p_value_3 < 0.05, 0.001, 0)
+  get_h3$p_value_3 = NULL
+  
+  sigma2_3 = get_h3 %>% group_by(b) %>%
+    summarise_at(vars(starts_with("alpha")), sum)
+  
+  
+  #Finally with do it again but with sigma = 4
+  
+  # With N = 10
+  for(i in seq_along(beta)){
+    for(t in 1:1000){
+      e = rnorm(n_1, mean=0, sd=sigma_3)
+      y = beta_0 + beta[i] * x_values_1 + e
+      model_1 = lm(y ~ x_values_1)
+      p_value[t] = summary(model_1)$coefficient[2,4]
+    }
+    p_table_1[[i]] = data.frame(b = beta[i], p_value = p_value)
+    
+  }
+  
+  # With N = 20
+  for(i in seq_along(beta)){
+    for(t in 1:1000){
+      e = rnorm(n_1, mean=0, sd=sigma_3)
+      y = beta_0 + beta[i] * x_values_2 + e
+      model_1 = lm(y ~ x_values_2)
+      p_value_2[t] = summary(model_1)$coefficient[2,4]
+    }
+    p_table_2[[i]] = data.frame(b = beta[i], p_value_2 = p_value_2)
+  }
+  
+  # With N = 30
+  for(i in seq_along(beta)){
+    for(t in 1:1000){
+      e = rnorm(n_1, mean=0, sd=sigma_3)
+      y = beta_0 + beta[i] * x_values_3 + e
+      model_1 = lm(y ~ x_values_3)
+      p_value_3[t] = summary(model_1)$coefficient[2,4]
+    }
+    p_table_3[[i]] = data.frame(b = beta[i], p_value_3 = p_value_3)
+  }
+  
+  
+  get_h = Reduce(merge.all, p_table_1)
+  get_h["alpha_1"] = ifelse(get_h$p_value < 0.05, 0.001, 0)
+  get_h$p_value = NULL
+  
+  sigma3 = get_h %>% group_by(b) %>%
+    summarise_at(vars(starts_with("alpha")), sum)
+  
+  get_h2 = Reduce(merge.all2, p_table_2)
+  get_h2["alpha_2"] = ifelse(get_h2$p_value_2 < 0.05, 0.001, 0)
+  get_h2$p_value_2 = NULL
+  
+  sigma3_2 = get_h2 %>% group_by(b) %>%
+    summarise_at(vars(starts_with("alpha")), sum)
+  
+  # Marge calculated values
+  get_h3 = Reduce(merge.all3, p_table_3)
+  get_h3["alpha_3"] = ifelse(get_h3$p_value_3 < 0.05, 0.001, 0)
+  get_h3$p_value_3 = NULL
+  
+  sigma3_3 = get_h3 %>% group_by(b) %>%
+    summarise_at(vars(starts_with("alpha")), sum)
+```
+
+- **Results:**
+
+Here we will plot the power line for each value of sigma and each value on sample site (N)
+
+```{r}
+  plot(get1$b,get1$alpha_1, xlim = range(get1$b), ylim = range(get1$alpha_1) ,ylab = "Power", 
+       xlab = expression(beta)[1], main= expression(paste("Power with ", sigma, " = 1 and N = (1, 2, 4)")),cex.axis=1,cex.lab=1.5)
+  lines(get1$b, get1$alpha_1, type = "b", lty=1, col="darkorange")
+  lines(get2$b, get2$alpha_2, type = "b", lty=1, col="darkblue")
+  lines(get3$b, get3$alpha_3, type = "b", lty=1, col="darkred")
+  legend("bottomright",title="N values",lty=c(2, 2, 2), legend = c("N = 10","n = 20","n = 30"), col=c("darkorange","darkblue","darkred"))
+  
+  
+```
+
+```{r}
+  plot(sigma2$b,sigma2$alpha_1, xlim = range(sigma2$b), ylim = range(sigma2$alpha_1) ,ylab = "Power", 
+       xlab = expression(beta)[1], main= expression(paste("Power with ", sigma, " = 2 and N = (1, 2, 4)")),cex.axis=1,cex.lab=1.5)
+  lines(sigma2$b, sigma2$alpha_1, type = "b", lty=1, col="darkorange")
+  lines(sigma2_2$b, sigma2_2$alpha_2, type = "b", lty=1, col="darkblue")
+  lines(sigma2_3$b, sigma2_3$alpha_3, type = "b", lty=1, col="darkred")
+  legend("bottomright",title="N values",lty=c(2, 2, 2), legend = c("N = 10","n = 20","n = 30"), col=c("darkorange","darkblue","darkred"))
+
+```
+
+
+```{r}
+  plot(sigma3$b,sigma3$alpha_1, xlim = range(sigma3$b), ylim = range(sigma3$alpha_1),ylab = "Power", 
+       xlab = expression(beta)[1], main= expression(paste("Power with ", sigma, " = 4 and N = (1, 2, 4)")),cex.axis=1,cex.lab=1.5)
+  lines(sigma3$b, sigma3$alpha_1, type = "b", lty=1, col="darkorange")
+  lines(sigma3_2$b, sigma3_2$alpha_2, type = "b", lty=1, col="darkblue")
+  lines(sigma3_3$b, sigma3_3$alpha_3, type = "b", lty=1, col="darkred")
+  legend("bottomright",title="N values",lty=c(2, 2, 2), legend = c("N = 10","n = 20","n = 30"), col=c("darkorange","darkblue","darkred"))
+  
+```
+
+- **Discussion:**
+
+As we can see in the chart, the sample size has a clear effect on power. When we separate from zero its value, we decrease the acceptance area while increasing the rejection area of the test. For this, we have more chances of rejecting the null hypothesis. 
+
+On another side, we have a sigma that has other effects in power, as sigma increases the power decrease. And to answer to our question about if 1000 simulations are enough we can conclude that 1000 simulations are good enough for our simulation with the results that we got, also one thing to point is that with the simulation noise work (-2 to 2) we got a reverse bell  where we saw that a more significant value of sample size the bell expand (get closer to 0) in the simulation for each value of sigma
+
+
